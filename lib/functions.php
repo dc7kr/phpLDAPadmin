@@ -65,11 +65,31 @@ spl_autoload_register(function($className) {
         __METHOD__,_('Called to load a class that cant be found'),$className),
       'type'=>'error'));
 });
+function pla_autoload($className) {
+	if (file_exists(HOOKSDIR."classes/$className.php"))
+		require_once(HOOKSDIR."classes/$className.php");
+	elseif (file_exists(LIBDIR."$className.php"))
+		require_once(LIBDIR."$className.php");
+	elseif (file_exists(LIBDIR."ds_$className.php"))
+		require_once(LIBDIR."ds_$className.php");
+	else
+		system_message(array(
+			'title'=>_('Generic Error'),
+			'body'=>sprintf('%s: %s [%s]',
+				__METHOD__,_('Called to load a class that cant be found'),$className),
+			'type'=>'error'));
+}
+
+if (version_compare(phpversion(), '7.0', '>=')) {
+	spl_autoload_register('pla_autoload');
+} else {
+	eval('function __autoload($className) {pla_autoload($className);}');
+}
 
 /**
  * Strips all slashes from the specified array in place (pass by ref).
  * @param Array The array to strip slashes from, typically one of
- *                     $_GET, $_POST, or $_COOKIE.
+ *        $_GET, $_POST, or $_COOKIE.
  */
 function array_stripslashes(&$array) {
   if (DEBUG_ENABLED && (($fargs=func_get_args())||$fargs='NOARGS'))
@@ -341,70 +361,70 @@ function check_config($config_file) {
  * @return array
  */
 function cmd_control_pane($type) {
-  if (defined('DEBUG_ENABLED') && DEBUG_ENABLED && (($fargs=func_get_args())||$fargs='NOARGS'))
-    debug_log('Entered (%%)',1,0,__FILE__,__LINE__,__METHOD__,$fargs);
+	if (defined('DEBUG_ENABLED') && DEBUG_ENABLED && (($fargs=func_get_args())||$fargs='NOARGS'))
+		debug_log('Entered (%%)',1,0,__FILE__,__LINE__,__METHOD__,$fargs);
 
-  switch ($type) {
-    case 'main' :
-      return array(
-        'home'=>array(
-          'title'=>_('Home'),
-          'enable'=>true,
-          'link'=>sprintf('href="index.php" title="%s"',_('Home')),
-          'image'=>sprintf('<img src="%s/home-big.png" alt="%s" />',IMGDIR,_('Home'))),
+	switch ($type) {
+		case 'main' :
+			return array(
+				'home'=>array(
+					'title'=>_('Home'),
+					'enable'=>true,
+					'link'=>sprintf('href="index.php" title="%s"',_('Home')),
+					'image'=>sprintf('<img src="%s/home-big.png" alt="%s" />',IMGDIR,_('Home'))),
 
-        'purge'=>array(
-          'title'=>_('Purge caches'),
-          'enable'=>isset($_SESSION[APPCONFIG]) ? $_SESSION[APPCONFIG]->isCommandAvailable('script','purge_cache') : false,
-          'link'=>sprintf('href="cmd.php?cmd=purge_cache" onclick="return ajDISPLAY(\'BODY\',\'cmd=purge_cache\',\'%s\');" title="%s"',
-            _('Clearing cache'),_('Purge caches')),
-          'image'=>sprintf('<img src="%s/trash-big.png" alt="%s" />',IMGDIR,_('Purge caches'))),
+				'purge'=>array(
+					'title'=>_('Purge caches'),
+					'enable'=>isset($_SESSION[APPCONFIG]) ? $_SESSION[APPCONFIG]->isCommandAvailable('script','purge_cache') : false,
+					'link'=>sprintf('href="cmd.php?cmd=purge_cache" onclick="return ajDISPLAY(\'BODY\',\'cmd=purge_cache\',\'%s\');" title="%s"',
+						_('Clearing cache'),_('Purge caches')),
+					'image'=>sprintf('<img src="%s/trash-big.png" alt="%s" />',IMGDIR,_('Purge caches'))),
 
-        'hide_debug_info'=>array(
-          'title'=>_('Show Cache'),
-          'enable'=>isset($_SESSION[APPCONFIG]) ? $_SESSION[APPCONFIG]->isCommandAvailable('script','show_cache') : false,
-          'link'=>sprintf('href="cmd.php?cmd=show_cache" onclick="return ajDISPLAY(\'BODY\',\'cmd=show_cache\',\'%s\');" title="%s"',
-            _('Loading'),_('Show Cache'),_('Show Cache')),
-          'image'=>sprintf('<img src="%s/debug-cache.png" alt="%s" />',IMGDIR,_('Show Cache'))),
-      );
+				'hide_debug_info'=>array(
+					'title'=>_('Show Cache'),
+					'enable'=>isset($_SESSION[APPCONFIG]) ? ($_SESSION[APPCONFIG]->isCommandAvailable('script','show_cache')) && (! $_SESSION[APPCONFIG]->getValue('appearance','hide_debug_info')) : false,
+					'link'=>sprintf('href="cmd.php?cmd=show_cache" onclick="return ajDISPLAY(\'BODY\',\'cmd=show_cache\',\'%s\');" title="%s"',
+						_('Loading'),_('Show Cache'),_('Show Cache')),
+					'image'=>sprintf('<img src="%s/debug-cache.png" alt="%s" />',IMGDIR,_('Show Cache'))),
+			);
 
-      break;
+			break;
 
-    case 'top' :
-      return array(
-        'forum'=>array(
-          'title'=>_('Forum'),
-          'enable'=>isset($_SESSION[APPCONFIG]) ? $_SESSION[APPCONFIG]->isCommandAvailable('cmd','oslinks') : true,
-          'link'=>sprintf('href="%s" title="%s" onclick="target=\'_blank\';"',get_href('forum'),_('Forum')),
-          'image'=>sprintf('<img src="%s/forum-big.png" alt="%s" />',IMGDIR,_('Forum'))),
+		case 'top' :
+			return array(
+				'forum'=>array(
+					'title'=>_('Forum'),
+					'enable'=>isset($_SESSION[APPCONFIG]) ? $_SESSION[APPCONFIG]->isCommandAvailable('cmd','oslinks') : true,
+					'link'=>sprintf('href="%s" title="%s" onclick="target=\'_blank\';"',get_href('forum'),_('Forum')),
+					'image'=>sprintf('<img src="%s/forum-big.png" alt="%s" />',IMGDIR,_('Forum'))),
 
-        'feature'=>array(
-          'title'=>_('Request feature'),
-          'enable'=>isset($_SESSION[APPCONFIG]) ? $_SESSION[APPCONFIG]->isCommandAvailable('cmd','oslinks') : true,
-          'link'=>sprintf('href="%s" title="%s" onclick="target=\'_blank\';"',get_href('add_rfe'),_('Request feature')),
-          'image'=>sprintf('<img src="%s/request-feature-big.png" alt="%s" />',IMGDIR,_('Request feature'))),
+				'feature'=>array(
+					'title'=>_('Request feature'),
+					'enable'=>isset($_SESSION[APPCONFIG]) ? $_SESSION[APPCONFIG]->isCommandAvailable('cmd','oslinks') : true,
+					'link'=>sprintf('href="%s" title="%s" onclick="target=\'_blank\';"',get_href('add_rfe'),_('Request feature')),
+					'image'=>sprintf('<img src="%s/request-feature-big.png" alt="%s" />',IMGDIR,_('Request feature'))),
 
-        'bug'=>array(
-          'title'=>_('Report a bug'),
-          'enable'=>isset($_SESSION[APPCONFIG]) ? $_SESSION[APPCONFIG]->isCommandAvailable('cmd','oslinks') : true,
-          'link'=>sprintf('href="%s" title="%s" onclick="target=\'_blank\';"',get_href('add_bug'),_('Report a bug')),
-          'image'=>sprintf('<img src="%s/bug-big.png" alt="%s" />',IMGDIR,_('Report a bug'))),
+				'bug'=>array(
+					'title'=>_('Report a bug'),
+					'enable'=>isset($_SESSION[APPCONFIG]) ? $_SESSION[APPCONFIG]->isCommandAvailable('cmd','oslinks') : true,
+					'link'=>sprintf('href="%s" title="%s" onclick="target=\'_blank\';"',get_href('add_bug'),_('Report a bug')),
+					'image'=>sprintf('<img src="%s/bug-big.png" alt="%s" />',IMGDIR,_('Report a bug'))),
 
-        'donation'=>array(
-          'title'=>_('Donate'),
-          'enable'=>isset($_SESSION[APPCONFIG]) ? $_SESSION[APPCONFIG]->isCommandAvailable('cmd','oslinks') : true,
-          'link'=>sprintf('href="%s" title="%s" onclick="target=\'_blank\';"',get_href('donate'),_('Donate')),
-          'image'=>sprintf('<img src="%s/smile-big.png" alt="%s" />',IMGDIR,_('Donate'))),
+				'donation'=>array(
+					'title'=>_('Donate'),
+					'enable'=>isset($_SESSION[APPCONFIG]) ? $_SESSION[APPCONFIG]->isCommandAvailable('cmd','oslinks') : true,
+					'link'=>sprintf('href="%s" title="%s" onclick="target=\'_blank\';"',get_href('donate'),_('Donate')),
+					'image'=>sprintf('<img src="%s/smile-big.png" alt="%s" />',IMGDIR,_('Donate'))),
 
-        'help'=>array(
-          'title'=>_('Help'),
-          'enable'=>isset($_SESSION[APPCONFIG]) ? $_SESSION[APPCONFIG]->isCommandAvailable('cmd','oslinks') : true,
-          'link'=>sprintf('href="%s" title="%s" onclick="target=\'_blank\';"',get_href('documentation'),_('Help')),
-          'image'=>sprintf('<img src="%s/help-big.png" alt="%s" />',IMGDIR,_('Help')))
-      );
+				'help'=>array(
+					'title'=>_('Help'),
+					'enable'=>isset($_SESSION[APPCONFIG]) ? $_SESSION[APPCONFIG]->isCommandAvailable('cmd','oslinks') : true,
+					'link'=>sprintf('href="%s" title="%s" onclick="target=\'_blank\';"',get_href('documentation'),_('Help')),
+					'image'=>sprintf('<img src="%s/help-big.png" alt="%s" />',IMGDIR,_('Help')))
+			);
 
-      break;
-  }
+			break;
+	}
 }
 
 /**
@@ -647,11 +667,11 @@ function error($msg,$type='note',$redirect=null,$fatal=false,$backtrace=false) {
  *
  * @return The form GET/REQUEST/SESSION/POST variable value or its default
  */
-function get_request($attr,$type='POST',$die=false,$default=null) {
-  switch($type) {
-    case 'GET':
-      $value = isset($_GET[$attr]) ? (is_array($_GET[$attr]) ? $_GET[$attr] : (empty($_GET['nodecode'][$attr]) ? rawurldecode($_GET[$attr]) : $_GET[$attr])) : $default;
-      break;
+function get_request($attr,$type='POST',$die=false,$default=null,$preventXSS=true) {
+	switch($type) {
+		case 'GET':
+			$value = isset($_GET[$attr]) ? (is_array($_GET[$attr]) ? $_GET[$attr] : (empty($_GET['nodecode'][$attr]) ? rawurldecode($_GET[$attr]) : $_GET[$attr])) : $default;
+			break;
 
     case 'REQUEST':
       $value = isset($_REQUEST[$attr]) ? (is_array($_REQUEST[$attr]) ? $_REQUEST[$attr] : (empty($_REQUEST['nodecode'][$attr]) ? rawurldecode($_REQUEST[$attr]) : $_REQUEST[$attr])) : $default;
@@ -661,24 +681,41 @@ function get_request($attr,$type='POST',$die=false,$default=null) {
       $value = isset($_SESSION[$attr]) ? (is_array($_SESSION[$attr]) ? $_SESSION[$attr] : (empty($_SESSION['nodecode'][$attr]) ? rawurldecode($_SESSION[$attr]) : $_SESSION[$attr])) : $default;
       break;
 
-    case 'POST':
-    default:
-      $value = isset($_POST[$attr]) ? (is_array($_POST[$attr]) ? $_POST[$attr] : (empty($_POST['nodecode'][$attr]) ? rawurldecode($_POST[$attr]) : $_POST[$attr])) : $default;
-      break;
-  }
-
-  if ($die && is_null($value))
-    system_message(array(
-      'title'=>_('Generic Error'),
-      'body'=>sprintf('%s: Called "%s" without "%s" using "%s"',
-        basename($_SERVER['PHP_SELF']),get_request('cmd','REQUEST'),$attr,$type),
-      'type'=>'error'),
-      'index.php');
-
-  return $value;
+		case 'POST':
+		default:
+			$value = isset($_POST[$attr]) ? (is_array($_POST[$attr]) ? $_POST[$attr] : (empty($_POST['nodecode'][$attr]) ? rawurldecode($_POST[$attr]) : $_POST[$attr])) : $default;
+			break;
+	}
+	
+	if ($die && is_null($value))
+		system_message(array(
+			'title'=>_('Generic Error'),
+			'body'=>sprintf('%s: Called "%s" without "%s" using "%s"',
+				basename($_SERVER['PHP_SELF']),get_request('cmd','REQUEST'),preventXSS($attr),preventXSS($type)),
+			'type'=>'error'),
+			'index.php');
+	if($preventXSS && !is_null($value))
+		$value = preventXSS($value);
+	return $value;
+}
+/**
+*  Prevent XSS function. This function can usage has preventXSS(get_request('cmd','REQUEST'))
+*  Return valor escape XSS.
+*/
+ function preventXSS($data){
+        if (gettype($data) == 'array') {
+            foreach ($data as $key => $value) {
+                if (gettype($value) == 'array')
+                    $data[$key] = preventXSS($value);
+                else
+                    $data[$key] = htmlspecialchars($value);
+            }
+            return $data;
+        }
+        return htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
 }
 
-/**
+/*
  * Record a system message.
  * This function can be used as an alternative to generate a system message, if page hasnt yet been defined.
  */
@@ -1006,6 +1043,23 @@ function get_custom_file($index,$filename,$path) {
 }
 
 /**
+ * Replacement for create_function() which is deprecated as of php 7.2
+ *
+ * @param string The function arguments
+ * @param string The function code
+ */
+function pla_create_function($args, $code) {
+	if (version_compare(phpversion(),'7.0','>=')) {
+		# anonymous functions were introduced in PHP 5.3.0
+		return eval("return function(".$args."){".$code."};");
+
+	} else {
+		# create_function is deprecated in php 7.2
+		return create_function($args, $code);
+	}
+}
+
+/**
  * Sort a multi dimensional array.
  *
  * @param array Multi demension array passed by reference
@@ -1092,8 +1146,8 @@ function masort(&$data,$sortby,$rev=0) {
 
     $code .= 'return $c;';
 
-    $CACHE[$sortby] = function($a, $b) { global $code; eval($code); };
-  }
+		$CACHE[$sortby] = pla_create_function('$a, $b',$code);
+	}
 
   uasort($data,$CACHE[$sortby]);
 }
@@ -2483,6 +2537,32 @@ function draw_chooser_link($form,$element,$include_choose_text=true,$rdn='none')
 }
 
 /**
+ * http://php.net/manual/en/function.ldap-explode-dn.php#34724
+ * fixed for:
+ * Keep attention on UTF8 encoded DNs. Since openLDAP >=2.1.2
+ * ldap_explode_dn turns unprintable chars (in the ASCII sense, UTF8
+ * encoded) into \<hexcode>.
+ */
+function ldap_explode_dn_patch($dn,$with_attrib) {
+	$result = ldap_explode_dn($dn,$with_attrib);
+	if (! $result)
+		return null;
+
+	# translate hex code into ascii again
+	foreach ($result as $key => $value) {
+		$result[$key] = preg_replace_callback(
+			"/\\\([0-9A-Fa-f]{2})/",
+			function ($matches) {
+				return chr(hexdec($matches[1]));
+			},
+			$value
+		);
+	}
+
+	return $result;
+}
+
+/**
  * Explode a DN into an array of its RDN parts.
  *
  * NOTE: When a multivalue RDN is passed to ldap_explode_dn, the results returns with 'value + value';
@@ -2516,12 +2596,12 @@ function pla_explode_dn($dn,$with_attributes=0) {
 
   $dn = addcslashes($dn,'<>+";');
 
-  # split the dn
-  $result[0] = ldap_explode_dn(dn_escape($dn),0);
-  $result[1] = ldap_explode_dn(dn_escape($dn),1);
-  if (! $result[$with_attributes]) {
-    if (DEBUG_ENABLED)
-      debug_log('Returning NULL - NO result.',1,0,__FILE__,__LINE__,__METHOD__);
+	# split the dn
+	$result[0] = ldap_explode_dn_patch(dn_escape($dn),0);
+	$result[1] = ldap_explode_dn_patch(dn_escape($dn),1);
+	if (! $result[$with_attributes]) {
+		if (DEBUG_ENABLED)
+			debug_log('Returning NULL - NO result.',1,0,__FILE__,__LINE__,__METHOD__);
 
     return array();
   }
@@ -2597,40 +2677,26 @@ function dn_unescape($dn) {
  * @return string The URL to the requested item.
  */
 function get_href($type,$extra_info='') {
-  $sf = 'https://sourceforge.net';
-  $pla = 'http://phpldapadmin.sourceforge.net';
-  $group_id = '61828';
-  $bug_atid = '498546';
-  $rfe_atid = '498549';
-  $forum_id = 'phpldapadmin-users';
+	$pla = 'http://phpldapadmin.sourceforge.net';
 
-  switch($type) {
-    case 'add_bug':
-      return sprintf('%s/tracker/?func=add&amp;group_id=%s&amp;atid=%s',$sf,$group_id,$bug_atid);
-    case 'add_rfe':
-      return sprintf('%s/tracker/?func=add&amp;group_id=%s&amp;atid=%s',$sf,$group_id,$rfe_atid);
-    case 'credits':
-      return sprintf('%s/Credits',$pla);
-    case 'documentation':
-      return sprintf('%s/Documentation',$pla);
-    case 'donate':
-      return sprintf('%s/donate/index.php?group_id=%s',$sf,$group_id);
-    case 'forum':
-      return sprintf('%s/mailarchive/forum.php?forum_name=%s',$sf,$forum_id);
-    case 'logo':
-      if (! isset($_SERVER['HTTPS']) || strtolower($_SERVER['HTTPS']) != 'on')
-        $proto = 'http';
-      else
-        $proto = 'https';
-
-      return isset($_SESSION) && ! $_SESSION[APPCONFIG]->getValue('appearance','remoteurls') ? '' : sprintf('%s://sflogo.sourceforge.net/sflogo.php?group_id=%s&amp;type=10',$proto,$group_id);
-    case 'sf':
-      return sprintf('%s/projects/phpldapadmin',$sf);
-    case 'web':
-      return sprintf('%s',$pla);
-    default:
-      return null;
-  }
+	switch($type) {
+		case 'add_bug':
+			return 'https://github.com/leenooks/phpLDAPadmin/issues';
+		case 'add_rfe':
+			return 'https://github.com/leenooks/phpLDAPadmin/issues';
+		case 'credits':
+			return sprintf('%s/Credits',$pla);
+		case 'documentation':
+			return sprintf('%s/Documentation',$pla);
+		case 'donate':
+			return 'https://sourceforge.net/donate/index.php?group_id=61828';
+		case 'forum':
+			return 'https://stackoverflow.com/questions/tagged/phpldapadmin';
+		case 'web':
+			return sprintf('%s',$pla);
+		default:
+			return null;
+	}
 }
 
 /**
@@ -3141,5 +3207,31 @@ function isAjaxEnabled() {
     return ($_SESSION[APPCONFIG]->getValue('appearance','tree') == 'AJAXTree');
   else
     return false;
+}
+/**
+* Check if user is a robot with reCAPTCHA
+**/
+function IsRobot($gResponse){
+	$isRobot = true;
+	$url = 'https://www.google.com/recaptcha/api/siteverify';
+	$data = array(
+		'secret' => $_SESSION[APPCONFIG]->getValue('session','reCAPTCHA-key-server'),
+		'response' => $gResponse
+	);
+	$options = array(
+		'http' => array (
+			'method' => 'POST','header' =>
+	        'Content-Type: application/x-www-form-urlencoded',
+			'content' => http_build_query($data)
+		)
+	);
+	$context  = stream_context_create($options);
+	$verify = file_get_contents($url, false, $context);
+	$captcha_success = json_decode($verify);
+	if ($captcha_success->success) {
+		$isRobot = false;
+	}
+	return $isRobot;
+
 }
 ?>

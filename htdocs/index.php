@@ -57,6 +57,11 @@ if (defined('CONFDIR'))
 else
 	$app['config_file'] = 'config.php';
 
+if (! is_readable($app['config_file'])) {
+	if (ob_get_level()) ob_end_clean();
+	die(sprintf("Missing configuration file <b>%s</b> - have you created it?",$app['config_file']));
+}
+
 # Make sure this PHP install has session support
 if (! extension_loaded('session'))
 	error('<p>Your install of PHP appears to be missing php-session support.</p><p>Please install php-session support before using phpLDAPadmin.<br /><small>(Dont forget to restart your web server afterwards)</small></p>','error',null,true);
@@ -120,8 +125,10 @@ if (! $config = check_config($app['config_file'])) {
 	$_SESSION[APPCONFIG] = $config;
 }
 
-if ($uri = get_request('URI','GET'))
+if ($uri = get_request('URI','GET')) {
 	header(sprintf('Location: cmd.php?%s',base64_decode($uri)));
+        exit;
+}
 
 if (! preg_match('/^([0-9]+\.?)+/',app_version())) {
 	system_message(array(
